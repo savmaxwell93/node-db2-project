@@ -24,10 +24,15 @@ const deleteById = async (id) => {
   return deleted;
 }
 
+const getByVin = async (vin) => {
+  return db('cars').where({ vin }).first();
+}
+
 module.exports = {
   getAll,
   getById,
   create,
   updateById,
-  deleteById
+  deleteById,
+  getByVin
 }
