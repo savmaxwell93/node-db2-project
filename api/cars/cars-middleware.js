@@ -1,21 +1,58 @@
 const Car = require('./cars-model');
 const vin = require('vin-validator');
 const { carSchema } = require('../schemas/index');
+const db = require('../../data/db-config');
 
-const checkCarId = (req, res, next) => {
-  // DO YOUR MAGIC
+const checkCarId = async (req, res, next) => {
+  try {
+    const car = await Car.getById(req.params.id)
+    if (!car) {
+      res.status(404).json({
+        message: `car with id ${req.params.id} is not found`
+      })
+    } else {
+      req.car = car
+      next()
+    }
+  } catch (err) {
+    next(err)
+  }
 }
 
-const checkCarPayload = (req, res, next) => {
-  // DO YOUR MAGIC
+const checkCarPayload = async (req, res, next) => {
+  try {
+    const validated = await carSchema.validate(req.body);
+    req.body = validated
+    next()
+  } catch (err) {
+    res.status(400).json({
+      message: err.message
+    })
+  }
 }
 
-const checkVinNumberValid = (req, res, next) => {
-  // DO YOUR MAGIC
+const checkVinNumberValid = async (req, res, next) => {
+  if (vin.validate(req.body.vin)) {
+    next()
+  } else {
+    next({ status: 400, message: `vin ${req.body.vin} is invalid`})
+  }
 }
 
-const checkVinNumberUnique = (req, res, next) => {
-  // DO YOUR MAGIC
+const checkVinNumberUnique = async (req, res, next) => {
+  try {
+    const existing = await db('cars')
+      .where('vin', req.body.vin.trim())
+      .first();
+
+    if (existing) {
+      next({ status: 400, message: `vin ${req.body.vin} already exists`})
+    } else {
+      next()
+    }
+  } catch (err) {
+    next(err)
+  }
 }
 
 module.exports = {
